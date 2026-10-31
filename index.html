@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071522">
+<title>교실 대소동 — CLASS BUSTER | 과학고 시뮬레이션</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#06111c; --panel:#0b1e2c; --panel2:#102b3c;
+    --line:#28566a; --cyan:#75e8ed; --cyan2:#2aa9bc;
+    --gold:#f2c66f; --text:#e7f1ed; --muted:#91aeb6;
+    --hint-h:52px;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; width:100%; height:100%; min-height:100%; background:var(--bg); color:var(--text);
+    font-family:"Nanum Gothic","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; overflow:hidden; }
+  body {
+    background:
+      radial-gradient(ellipse at 50% 38%, rgba(30,103,126,.24), transparent 58%),
+      linear-gradient(135deg,#06111c 0%,#0a1b2b 52%,#07131e 100%);
+  }
+  #wrap {
+    position:fixed; inset:0 0 var(--hint-h) 0; display:grid; place-items:center;
+    padding:18px 18px 12px; overflow:hidden;
+    background-image:
+      linear-gradient(rgba(80,164,178,.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(80,164,178,.035) 1px,transparent 1px);
+    background-size:24px 24px;
+  }
+  #wrap::before {
+    content:"과학고 연구동  /  교육 시뮬레이션";
+    position:absolute; top:8px; left:14px; font:700 9px/1.2 ui-monospace,Consolas,monospace;
+    color:rgba(117,232,237,.52); letter-spacing:.16em; pointer-events:none;
+  }
+  #wrap::after {
+    content:"교내 대응 시스템  •  제1차 공개판";
+    position:absolute; bottom:6px; right:14px; font:700 8px/1.2 ui-monospace,Consolas,monospace;
+    color:rgba(117,232,237,.38); letter-spacing:.12em; pointer-events:none;
+  }
+  #screen {
+    display:block; width:min(calc(100vw - 30px), calc((100dvh - var(--hint-h) - 38px) * 1.6));
+    height:auto; max-width:100%; max-height:calc(100dvh - var(--hint-h) - 34px);
+    aspect-ratio:16/10; object-fit:contain; image-rendering:pixelated; image-rendering:crisp-edges;
+    background:#02070c; outline:none; cursor:crosshair;
+    border:2px solid #2b6377; box-shadow:0 0 0 1px #02080d,0 0 0 4px rgba(9,34,49,.85),
+      0 12px 42px rgba(0,0,0,.6),0 0 28px rgba(48,183,198,.12);
+  }
+  body.locked #screen { cursor:none; }
+  #msg {
+    position:absolute; left:0; top:0; pointer-events:none; font-weight:800; color:#f1f7ee;
+    text-shadow:2px 2px 0 #00111d,-1px -1px 0 #00111d,1px -1px 0 #00111d,-1px 1px 0 #00111d;
+    letter-spacing:.02em; white-space:pre;
+  }
+  #notice {
+    position:absolute; z-index:3; top:30px; left:50%; transform:translateX(-50%);
+    width:min(520px,calc(100vw - 28px)); padding:9px 13px; text-align:center;
+    color:#eaf9f4; background:rgba(8,30,44,.96); border:1px solid #68cbd3;
+    border-left:4px solid var(--gold); box-shadow:0 6px 22px rgba(0,0,0,.45);
+    font-size:12px; line-height:1.5; border-radius:3px;
+  }
+  #notice[hidden] { display:none; }
+  #hint {
+    position:fixed; z-index:2; inset:auto 0 0; min-height:var(--hint-h);
+    display:flex; align-items:center; justify-content:center; gap:7px 14px; flex-wrap:wrap;
+    padding:7px 14px; background:linear-gradient(180deg,#102737,#07131e);
+    border-top:1px solid #2c6679; box-shadow:0 -4px 16px rgba(0,0,0,.28);
+    color:#a9c2c6; font-size:11px; line-height:1.35;
+  }
+  #hint .controls { flex:1 1 570px; text-align:center; }
+  #hint b { color:var(--cyan); font-weight:800; }
+  #hint label { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; color:var(--gold); }
+  #hint input { vertical-align:middle; width:84px; accent-color:var(--cyan2); }
+  #hint button {
+    font:700 11px/1.2 system-ui, sans-serif; font-family:inherit; color:#e4f6f2; background:#17394c; border:1px solid #4b8998;
+    border-radius:3px; padding:6px 11px; cursor:pointer; white-space:nowrap;
+  }
+  #hint button:hover { background:#20536a; border-color:var(--cyan); }
+  #overlay {
+    position:fixed; inset:0; z-index:5; display:grid; place-items:center; overflow:auto;
+    padding:20px 14px; background:
+      radial-gradient(ellipse at 50% 32%,rgba(31,111,132,.28) 0%,transparent 46%),
+      linear-gradient(145deg,rgba(3,12,21,.96),rgba(4,20,31,.97));
+    backdrop-filter:blur(5px);
+  }
+  #overlay.hidden { display:none; }
+  .panel {
+    position:relative; width:min(610px,94vw); max-height:calc(100dvh - 34px); overflow:auto;
+    padding:clamp(18px,4vw,34px); text-align:center;
+    background:linear-gradient(145deg,rgba(12,34,49,.97),rgba(7,22,34,.98));
+    border:1px solid #39798b; border-radius:8px;
+    box-shadow:0 0 0 4px rgba(8,26,39,.8),0 20px 70px rgba(0,0,0,.6),inset 0 1px rgba(255,255,255,.05);
+  }
+  .panel::before,.panel::after { content:""; position:absolute; width:38px; height:7px; border-top:2px solid var(--gold); opacity:.85; }
+  .panel::before { top:8px; left:10px; border-left:2px solid var(--gold); }
+  .panel::after { right:10px; bottom:8px; border-right:2px solid var(--gold); transform:rotate(180deg); }
+  .brandline { display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:13px; color:#a4cbd0;
+    font:700 10px/1.2 ui-monospace,Consolas,monospace; letter-spacing:.19em; }
+  .crest { width:42px; height:42px; flex:0 0 auto; filter:drop-shadow(0 0 9px rgba(73,207,216,.18)); }
+  .logo {
+    margin:2px 0 0; font-size:clamp(34px,7.2vw,61px); font-weight:1000; letter-spacing:.025em; line-height:.98;
+    color:#d9ffff; -webkit-text-stroke:1px #2b93a6;
+    text-shadow:0 2px 0 #174d66,0 4px 0 #0a2c43,0 0 22px rgba(63,211,222,.28);
+  }
+  .sub { margin:12px 0 22px; font-size:clamp(12px,2.6vw,16px); color:var(--gold); font-weight:900; letter-spacing:.28em; }
+  .mission {
+    margin:0 auto 18px; max-width:440px; padding:9px 12px; color:#c6e4e3; background:#0a1d2c;
+    border:1px solid #285b6d; border-left:3px solid var(--gold); font-size:12px; line-height:1.65;
+  }
+  .progress { height:10px; background:#06111a; border:1px solid #356c7b; margin:0 auto 8px; width:min(390px,88%); padding:1px; }
+  #bar { height:100%; width:0; background:linear-gradient(90deg,#1f899f,#72e4df,#f2c66f); box-shadow:0 0 8px rgba(83,212,218,.32); transition:width .15s; }
+  #status { font-size:12px; color:#a9c4c8; min-height:1.5em; margin-bottom:15px; white-space:pre-wrap; }
+  #start {
+    font:900 17px/1.2 system-ui, sans-serif; font-family:inherit; letter-spacing:.16em; padding:13px 34px; color:#071722;
+    background:linear-gradient(#b7f7f1,#53cbd0); border:1px solid #d4fff5; border-radius:3px;
+    box-shadow:0 0 0 3px #123748,0 5px 0 #092333,0 0 22px rgba(80,219,221,.18);
+    cursor:pointer; transition:filter .12s,transform .12s;
+  }
+  #start:hover:not(:disabled) { filter:brightness(1.08); transform:translateY(-1px); }
+  #start:disabled { filter:grayscale(1) brightness(.55); cursor:wait; }
+  .keys {
+    margin:22px auto 0; display:grid; grid-template-columns: minmax(112px,auto) minmax(150px,1fr);
+    gap:6px 13px; max-width:440px; align-items:center; text-align:left; color:#aec5ca; font-size:11px;
+  }
+  .keys b { color:var(--gold); font:800 10px ui-monospace,Consolas,monospace; text-align:right; white-space:nowrap; }
+  .keys span { padding:2px 0; }
+  .keys kbd { display:inline-block; min-width:20px; padding:2px 4px; margin-right:2px; text-align:center;
+    background:#132f40; border:1px solid #376b7d; border-bottom-width:2px; border-radius:2px; color:#dff8f2; font:700 9px ui-monospace,monospace; }
+  .note { margin:20px auto 0; padding-top:12px; border-top:1px solid rgba(67,126,143,.42);
+    font-size:10px; color:#7f9da6; line-height:1.7; }
+  .note strong { color:#b7dfe0; }
+  @media (max-width:720px) {
+    :root { --hint-h:66px; }
+    #wrap { padding:18px 7px 10px; }
+    #hint { min-height:var(--hint-h); padding:6px 8px; font-size:9px; gap:4px 8px; }
+    #hint .controls { flex-basis:100%; order:0; }
+    #hint label { order:1; }
+    #hint input { width:66px; }
+    #hint button { order:2; padding:5px 8px; }
+    .brandline { font-size:8px; letter-spacing:.12em; }
+    .crest { width:34px; height:34px; }
+    .keys { max-width:390px; gap:5px 9px; font-size:10px; }
+    .keys b { font-size:9px; }
+  }
+  @media (max-width:390px) {
+    :root { --hint-h:74px; }
+    .panel { padding:16px 12px; }
+    .keys { grid-template-columns:98px minmax(0,1fr); gap:4px 7px; font-size:9px; }
+    .mission { font-size:10px; }
+  }
+  @media (max-height:560px) {
+    #overlay { padding:7px; }
+    .panel { padding:12px 20px; }
+    .brandline { margin-bottom:6px; }
+    .crest { width:28px; height:28px; }
+    .sub { margin:7px 0 10px; }
+    .mission { margin-bottom:9px; padding:5px 8px; }
+    .keys { margin-top:10px; gap:3px 10px; }
+    .note { margin-top:10px; padding-top:7px; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="screen" width="640" height="400" tabindex="0" aria-label="교실 대소동 게임 화면"></canvas>
+  <div id="msg" aria-live="polite"></div><div id="notice" hidden role="status"></div>
+</div>
+<div id="hint">
+  <div class="controls"><b>WASD</b> 이동 · <b>마우스</b> 시점 · <b>클릭/Ctrl</b> 도구 사용 · <b>Space/E</b> 장치 조작 · <b>Shift</b> 달리기 · <b>1–7</b> 도구 · <b>Tab</b> 지도 · <b>Esc</b> 메뉴</div>
+  <label for="sens">마우스 감도 <input id="sens" type="range" min="1" max="12" step="0.5" value="4"></label>
+  <button id="fs" type="button">전체 화면</button>
+</div>
+<div id="overlay">
+  <main class="panel" role="dialog" aria-labelledby="game-title">
+    <div class="brandline">
+      <svg class="crest" viewBox="0 0 64 64" role="img" aria-label="과학고 문장">
+        <path d="M32 3 55 11v18c0 15-9 25-23 32C18 54 9 44 9 29V11Z" fill="#102f43" stroke="#78e2e4" stroke-width="2.5"/>
+        <path d="M17 21c7-4 12-3 15 1 3-4 8-5 15-1v18c-7-3-12-2-15 2-3-4-8-5-15-2Z" fill="#e9f1e4" stroke="#f2c66f" stroke-width="2"/>
+        <path d="M32 22v19" stroke="#1e657a" stroke-width="2"/>
+        <ellipse cx="32" cy="16" rx="12" ry="4.5" fill="none" stroke="#7be7e4" stroke-width="1.5" transform="rotate(28 32 16)"/>
+        <ellipse cx="32" cy="16" rx="12" ry="4.5" fill="none" stroke="#7be7e4" stroke-width="1.5" transform="rotate(-28 32 16)"/>
+        <circle cx="32" cy="16" r="2.8" fill="#f7d37d"/>
+      </svg>
+      과학고 연구동 · 교육 시뮬레이션
+    </div>
+    <div class="logo" id="game-title">CLASS BUSTER</div>
+    <div class="sub">교 실 대 소 동</div>
+    <div class="mission">과학고 연구동에 비상 경보가 발생했습니다.<br>과목 구역을 복구하고 열쇠 메달을 모아 출구를 확보하세요.</div>
+    <div class="progress" role="progressbar" aria-label="게임 데이터 불러오기"><div id="bar"></div></div>
+    <div id="status" role="status">게임 엔진 준비 중…</div>
+    <button id="start" type="button" disabled>시뮬레이션 시작</button>
+    <div class="keys">
+      <b><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></b><span>전진 · 후진 · 옆걸음</span>
+      <b><kbd>마우스</kbd></b><span>클릭하면 포인터 고정, 움직여 시점 회전</span>
+      <b><kbd>클릭</kbd><kbd>Ctrl</kbd></b><span>선택한 학습 도구 사용</span>
+      <b><kbd>Space</kbd><kbd>E</kbd></b><span>문 · 스위치 · 이동 장치 조작</span>
+      <b><kbd>Shift</kbd></b><span>달리기</span>
+      <b><kbd>1–7</kbd></b><span>학습 도구 선택</span>
+      <b><kbd>Tab</kbd></b><span>자동 지도</span>
+      <b><kbd>Esc</kbd></b><span>메뉴 · 포인터 잠금 해제</span>
+      <b><kbd>F2 / F3</kbd></b><span>저장 / 불러오기</span>
+    </div>
+    <div class="note"><strong>교육용 비잔혹 FPS 프로젝트</strong><br>
+      DOOM 엔진 · id Software GPL v2 · Chocolate Doom · doomgeneric<br>
+      Freedoom 게임 데이터 기반 · 과목 마스코트 및 학교 테마 리소스</div>
+  </main>
+</div>
+<script src="runtime.js"></script>
+</body>
+</html>
